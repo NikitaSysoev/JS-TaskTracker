@@ -23,181 +23,223 @@
   </head>
   <body>
     <div class="container">
-      <div class="row">
-        <div class="col-sm-6">
-          <div class="card">
-            <div class="card-body">
-              <div class="form-group">
-                <h4 id="form-header">Add Task</h4>
-                <label for="taskName">Task name<span class="text-muted">*</span></label>
-                <input class="form-control" id="taskName" placeholder="Enter task name" />
-                <small id="taskHelp" class="form-text text-muted"
-                  >Это поле обязательное для заполнения</small
-                >
-              </div>
-
-              <div class="form-group">
-                <label for="taskDescription">Task description</label>
-                <textarea
-                  class="form-control"
-                  id="taskDescription"
-                  rows="3"
-                  style="resize: none"
-                ></textarea>
-                <small id="descriptionHelp" class="form-text text-muted"></small>
-              </div>
-
-              <div class="form-group">
-                <label for="taskDate">Task date<span class="text-muted">*</span></label>
-                <div class="input-group">
-                  <div class="input-group-prepend" onclick="handleShowCalendar(event);">
-                    <span class="input-group-text" id="calendarOpener">
-                      <i class="fa fa-calendar"></i>
-                    </span>
+      <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item">
+          <a
+            class="nav-link active"
+            id="home-tab"
+            data-toggle="tab"
+            href="#home"
+            role="tab"
+            aria-controls="home"
+            aria-selected="true"
+            data-id="home"
+            onclick="selectPage(event);"
+            >Home</a
+          >
+        </li>
+        <li class="nav-item">
+          <a
+            class="nav-link"
+            id="profile-tab"
+            data-toggle="tab"
+            href="#profile"
+            role="tab"
+            aria-controls="profile"
+            aria-selected="false"
+            data-id="dnd"
+            onclick="selectPage(event);"
+            >DnD</a
+          >
+        </li>
+      </ul>
+      <div class="tab-content" id="myTabContent" style="margin-top: 20px;">
+        <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
+          <div class="row">
+            <div class="col-sm-6">
+              <div class="card">
+                <div class="card-body">
+                  <div class="form-group">
+                    <h4 id="form-header">Add Task</h4>
+                    <label for="taskName">Task name<span class="text-muted">*</span></label>
+                    <input class="form-control" id="taskName" placeholder="Enter task name" />
+                    <small id="taskHelp" class="form-text text-muted"
+                      >Это поле обязательное для заполнения</small
+                    >
                   </div>
-                  <input
-                    readonly
-                    type="text"
-                    class="form-control"
-                    id="taskDate"
-                    placeholder="Date"
-                  />
+
+                  <div class="form-group">
+                    <label for="taskDescription">Task description</label>
+                    <textarea
+                      class="form-control"
+                      id="taskDescription"
+                      rows="3"
+                      style="resize: none"
+                    ></textarea>
+                    <small id="descriptionHelp" class="form-text text-muted"></small>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="taskDate">Task date<span class="text-muted">*</span></label>
+                    <div class="input-group">
+                      <div class="input-group-prepend" onclick="handleShowCalendar(event);">
+                        <span class="input-group-text" id="calendarOpener">
+                          <i class="fa fa-calendar"></i>
+                        </span>
+                      </div>
+                      <input
+                        readonly
+                        type="text"
+                        class="form-control"
+                        id="taskDate"
+                        placeholder="Date"
+                      />
+                    </div>
+                    <small id="dateHelp" class="form-text text-muted"
+                      >Это поле обязательное для заполнения</small
+                    >
+                  </div>
+
+                  <div class="form-group form-check">
+                    <input type="checkbox" class="form-check-input" id="taskUrgent" />
+                    <label class="form-check-label" for="taskUrgent"
+                      ><i class="fas fa-exclamation-triangle"></i>Urgent</label
+                    >
+                  </div>
+
+                  <div class="row">
+                    <div class="col-sm-6">
+                      <button
+                        onclick="handleTask();"
+                        type="submit"
+                        class="btn btn-primary"
+                        id="clickTask"
+                      >
+                        Add new task
+                      </button>
+                    </div>
+                    <div class="col-sm-6">
+                      <button
+                        onclick="handleClearForm();"
+                        id="clearCancel"
+                        type="submit"
+                        class="btn btn-secondary"
+                      >
+                        Clear form
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <small id="dateHelp" class="form-text text-muted"
-                  >Это поле обязательное для заполнения</small
-                >
               </div>
+            </div>
 
-              <div class="form-group form-check">
-                <input type="checkbox" class="form-check-input" id="taskUrgent" />
-                <label class="form-check-label" for="taskUrgent"
-                  ><i class="fas fa-exclamation-triangle"></i>Urgent</label
-                >
-              </div>
-
-              <div class="row">
-                <div class="col-sm-6">
+            <div class="col-sm-6">
+              <div class="card">
+                <div class="card-body">
+                  <h3>List of tasks</h3>
+                  <ul id="taksList" class="list-group"></ul>
                   <button
-                    onclick="handleTask();"
-                    type="submit"
-                    class="btn btn-primary"
-                    id="clickTask"
+                    type="button"
+                    class="btn btn-outline-danger"
+                    onclick="handleModalDeleteAll();"
+                    style="margin-top: 10px;"
                   >
-                    Add new task
+                    Clear List
                   </button>
                 </div>
-                <div class="col-sm-6">
-                  <button
-                    onclick="handleClearForm();"
-                    id="clearCancel"
-                    type="submit"
-                    class="btn btn-secondary"
-                  >
-                    Clear form
-                  </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODAL-->
+
+          <div class="modal" id="modalWindow" tabindex="-1" role="dialog"></div>
+
+          <!--CALENDAR-->
+
+          <div id="calendar" class="micalendar" style="display:none; position:absolute">
+            <div class="header_wrap">
+              <div class="header">
+                <p id="monthHeader">Month name</p>
+              </div>
+              <div class="arrows">
+                <div id="prevButton" onclick="handlePrevCalendar(event);" class="arrows_left">
+                  <i class="fa fa-angle-left"></i>
+                </div>
+                <div id="nextButton" onclick="handleNextCalendar(event);" class="arrows_right">
+                  <i class="fa fa-angle-right"></i>
+                </div>
+              </div>
+            </div>
+            <table id="calendar_table">
+              <thead>
+                <tr>
+                  <th>Пн</th>
+                  <th>Вт</th>
+                  <th>Ср</th>
+                  <th>Чт</th>
+                  <th>Пт</th>
+                  <th>Сб</th>
+                  <th>Вс</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+            <hr />
+            <div class="btn-group">
+              <input
+                type="button"
+                onclick="handleCloseCalendar(event)"
+                value="Отмена"
+                class="btn btn-sm btn-outline-secondary"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="dnd" role="tabpanel" aria-labelledby="profile-tab">
+          <div class="row">
+            <div class="col-sm-4">
+              <div id="todoListCard" class="card">
+                <div class="card-body card-body-dnd">
+                  <h3>To Do</h3>
+                  <ul id="todolist" class="list-group"></ul>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div id="inprogressListCard" class="card">
+                <div class="card-body card-body-dnd">
+                  <h3>In progress</h3>
+                  <ul class="list-group" id="inprogresslist"></ul>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div id="doneListCard" class="card">
+                <div class="card-body card-body-dnd">
+                  <h3>Done</h3>
+                  <ul class="list-group" id="donelist"></ul>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="col-sm-6">
+        <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">
           <div class="card">
             <div class="card-body">
-              <h3>List of tasks</h3>
-              <ul id="taksList" class="list-group"></ul>
-              <button
-                type="button"
-                class="btn btn-outline-danger"
-                onclick="handleModalDeleteAll();"
-                style="margin-top: 10px;"
-              >
-                Clear List
-              </button>
+              Contact
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- MODAL-->
-
-      <div class="modal" id="modalWindow" tabindex="-1" role="dialog">
-        <!-- <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Modal title</h5>
-            <button
-              type="button"
-              class="close"
-              data-dismiss="modal"
-              aria-label="Close"
-            >
-              <span aria-hidden="true" onclick="handleCloseModal();"
-                >&times;</span
-              >
-            </button>
-          </div>
-          <div class="modal-body">
-            <p>Are you sure to save changes?</p>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-dismiss="modal"
-            >
-              Close
-            </button>
-            <button type="button" class="btn btn-primary">Save changes</button>
-          </div>
-        </div>
-      </div> -->
-      </div>
-
-      <!---->
-
-      <div id="calendar" class="micalendar" style="display:none; position:absolute">
-        <div class="header_wrap">
-          <div class="header">
-            <p id="monthHeader">Month name</p>
-          </div>
-          <div class="arrows">
-            <div id="prevButton" onclick="handlePrevCalendar(event);" class="arrows_left">
-              <i class="fa fa-angle-left"></i>
-            </div>
-            <div id="nextButton" onclick="handleNextCalendar(event);" class="arrows_right">
-              <i class="fa fa-angle-right"></i>
-            </div>
-          </div>
-        </div>
-        <table id="calendar_table">
-          <thead>
-            <tr>
-              <th>Пн</th>
-              <th>Вт</th>
-              <th>Ср</th>
-              <th>Чт</th>
-              <th>Пт</th>
-              <th>Сб</th>
-              <th>Вс</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-        <hr />
-        <div class="btn-group">
-          <input
-            type="button"
-            onclick="handleCloseCalendar(event)"
-            value="Отмена"
-            class="btn btn-sm btn-outline-secondary"
-          />
         </div>
       </div>
     </div>
     <!---->
     <script>
-      window.onload = initPage;
+      document.addEventListener('DOMContentLoaded', function() {
+        initPage();
+      });
     </script>
   </body>
 </html>

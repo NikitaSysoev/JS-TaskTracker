@@ -1,3 +1,10 @@
+const TASK_TODO = 'todo';
+const TASK_INPROGRESS = 'inprogress';
+const TASK_DONE = 'done';
+const SELECT_INDEX = [TASK_TODO, TASK_INPROGRESS, TASK_DONE];
+const DANGER = 'danger';
+const SUCCESS = 'success';
+
 const STATE = {
   taskList: [], // список задач
   formState: 'add', // [ add, edit, err ] - состсояние формы
@@ -12,18 +19,24 @@ const STATE = {
     taskName: null, // название задачи
     taskDescription: null, // описание
     taskDate: null, // дата
-    taskUrgent: false // важность задачи
+    taskUrgent: false, // важность задачи
+    taskStatus: 'todo',
+    id: null
+  },
+  page: 'home',
+  dnd: {
+    from: null,
+    to: null,
+    id: null
   }
 };
-
-const DANGER = 'danger';
-const SUCCESS = 'success';
 
 function collectDataFromForm() {
   STATE.formData.taskName = document.getElementById('taskName').value;
   STATE.formData.taskDescription = document.getElementById('taskDescription').value;
   STATE.formData.taskDate = document.getElementById('taskDate').value;
   STATE.formData.taskUrgent = document.getElementById('taskUrgent').checked;
+  STATE.formData.id = 'id' + new Date().getTime();
 }
 
 function clearForm() {
@@ -55,7 +68,9 @@ function pushDataToList() {
     taskName: null,
     taskDescription: null,
     taskDate: null,
-    taskUrgent: false
+    taskUrgent: false,
+    taskStatus: 'todo',
+    id: null
   };
 }
 
@@ -129,6 +144,8 @@ function initPage() {
   }
   STATE.taskList = localList || [];
   renderList();
+  initDnD();
+  renderDnDList();
   renderCalendar(STATE.calendarDate.getFullYear(), STATE.calendarDate.getMonth());
 }
 
@@ -148,28 +165,33 @@ function handleClearList() {
     taskName: null,
     taskDescription: null,
     taskDate: null,
-    taskUrgent: false
+    taskUrgent: false,
+    taskStatus: 'todo'
   };
   renderButton();
 }
 
-function renderList() {
-  const container = document.getElementById('taksList');
+function renderList(list = STATE.taskList, id = 'taksList') {
+  const container = document.getElementById(id);
   let div = '';
-  STATE.taskList.forEach((item, index) => {
-    div += `<li class="list-group-item">`;
+  list.forEach((item, index) => {
+    div += `<li class="list-group-item" draggable="${id !== 'taksList'}">`;
     div += item.taskUrgent ? '<i class="text-danger fa fa-exclamation-triangle"></i> &nbsp ' : '';
-    div += `<a onclick="handleTaskInfo(event)" data-id=${index} href="#">${item.taskName}</a><br>`;
+    div += `<a onclick="handleTaskInfo(event)" draggable="false" class="d" data-id=${
+      item.id
+    } href="#">${item.taskName}</a><br>`;
     div += `<span class="text-muted"><small>${item.taskDate}</small></span><br>`;
-    div += '<span class="edit_ico">';
-    div += `<i data-id=${index} onClick="handleEditTask(event)" class="fas fa-edit"></i></span>`;
-    div += '<span class="delete_ico">';
-    div += `<i data-id=${index} onClick="handleModalDelete(event);" class="fa fa-times"></i></span>`;
+    if (id === 'taksList') {
+      div += '<span class="edit_ico">';
+      div += `<i data-id=${index} onClick="handleEditTask(event)" class="fas fa-edit"></i></span>`;
+      div += '<span class="delete_ico">';
+      div += `<i data-id=${index} onClick="handleModalDelete(event);" class="fa fa-times"></i></span>`;
+    }
     div += '</li>';
   });
   const noDiv =
     "<li class='list-group-item'><strong class='text-secondary'>Список пуст</strong></li>";
-  container.innerHTML = STATE.taskList.length ? div : noDiv;
+  container.innerHTML = list.length ? div : noDiv;
 }
 
 function handleClearForm() {
@@ -250,6 +272,9 @@ function handleTask() {
 
 function handleTaskInfo(e) {
   e.preventDefault();
+  if (STATE.page === 'dnd') {
+    return false;
+  }
   const index = e.target.getAttribute('data-id');
   renderModalWindow('INFO', index);
 }
@@ -478,8 +503,6 @@ function renderOneCalendarCell({
 /* возвращает объект с 2 полями: на какой день недели выпадает первое число месяца и сколько всего в месяце дней*/
 function getFirstDayOfMonth(yy, mm) {
   const firstDayOfCurrentMonth = new Date(yy, mm, 1); // дата на момент первого числа текущего месяца
-  // const month = firstDayOfCurrentMonth.getMonth(); // месяц от 0 до 11, нужно прибавлять 1
-  // const dayMonth = firstDayOfCurrentMonth.getDate();
   let dayWeek = firstDayOfCurrentMonth.getDay(); // от 0 до 6, причем 0 - это воскресение
   dayWeek = dayWeek === 0 ? 7 : dayWeek;
   return {
@@ -501,4 +524,175 @@ function handleClickCalendarCell(e) {
   const str = `${day}.${month}.${year}`;
   document.getElementById('taskDate').value = str;
   handleCloseCalendar();
+}
+
+function selectPage(e) {
+  e.preventDefault();
+  STATE.page = e.target.getAttribute('data-id');
+  const node = document.getElementById(STATE.page);
+  const links = document.getElementsByClassName('nav-link');
+  const collection = document.getElementsByClassName('tab-pane');
+
+  [...links].forEach(item => item.classList.remove('active'));
+
+  for (let i = 0; i < collection.length; i++) {
+    collection[i].classList.remove('active');
+    collection[i].classList.remove('show');
+  }
+  renderDnDList();
+  e.target.classList.add('active');
+  node.classList.add('active');
+  node.classList.add('show');
+}
+
+function renderDnDList() {
+  const todo = STATE.taskList.filter(item => item.taskStatus === 'todo');
+  const inprogress = STATE.taskList.filter(item => item.taskStatus === 'inprogress');
+  const done = STATE.taskList.filter(item => item.taskStatus === 'done');
+  renderList(todo, 'todolist');
+  renderList(inprogress, 'inprogresslist');
+  renderList(done, 'donelist');
+}
+
+function handleDragStartTask(e) {
+  const indexTask = e.target.querySelector('a').getAttribute('data-id');
+  const parent = e.target.parentElement.parentElement.parentElement;
+  var parentId = parent.getAttribute('id');
+  var todoListCard = document.getElementById('todoListCard');
+  var inprogressListCard = document.getElementById('inprogressListCard');
+  var doneListCard = document.getElementById('doneListCard');
+
+  if (parentId.includes(TASK_TODO)) {
+    todoListCard.classList.add('inactive-dnd');
+    inprogressListCard.classList.add('active-dnd');
+    doneListCard.classList.add('active-dnd');
+    STATE.dnd.from = TASK_TODO;
+  } else if (parentId.includes(TASK_INPROGRESS)) {
+    inprogressListCard.classList.add('inactive-dnd');
+    todoListCard.classList.add('active-dnd');
+    doneListCard.classList.add('active-dnd');
+    STATE.dnd.from = TASK_INPROGRESS;
+  } else if (parentId.includes(TASK_DONE)) {
+    doneListCard.classList.add('inactive-dnd');
+    todoListCard.classList.add('active-dnd');
+    inprogressListCard.classList.add('active-dnd');
+    STATE.dnd.from = TASK_DONE;
+  }
+  STATE.dnd.id = indexTask;
+}
+
+function handleResetCardBlock(e) {
+  // убирает пунктирную-рамку вокруг блока "карточки"
+  e && e.stopPropagation();
+
+  const todoListCard = document.getElementById('todoListCard');
+  const inprogressListCard = document.getElementById('inprogressListCard');
+  const doneListCard = document.getElementById('doneListCard');
+
+  todoListCard.classList.remove(
+    'active-dnd',
+    'inactive-dnd',
+    'card-body-dnd-accept',
+    'card-body-dnd-decline'
+  );
+  inprogressListCard.classList.remove(
+    'active-dnd',
+    'inactive-dnd',
+    'card-body-dnd-accept',
+    'card-body-dnd-decline'
+  );
+  doneListCard.classList.remove(
+    'active-dnd',
+    'inactive-dnd',
+    'card-body-dnd-accept',
+    'card-body-dnd-decline'
+  );
+
+  todoListCard
+    .querySelector('.card-body')
+    .classList.remove('card-body-dnd-accept', 'card-body-dnd-decline');
+  inprogressListCard
+    .querySelector('.card-body')
+    .classList.remove('card-body-dnd-accept', 'card-body-dnd-decline');
+  doneListCard
+    .querySelector('.card-body')
+    .classList.remove('card-body-dnd-accept', 'card-body-dnd-decline');
+}
+
+function handleDragOver(e) {
+  // обработчик события - перетаскиваемый элемент перемещается над областью, куда можно сделать drop
+  e.preventDefault();
+  const cardContainer = e.currentTarget;
+  const cardBody = cardContainer.querySelector('.card-body');
+
+  if (
+    (cardContainer.id.includes(TASK_TODO) && STATE.dnd.from === TASK_TODO) ||
+    (cardContainer.id.includes(TASK_INPROGRESS) && STATE.dnd.from === TASK_INPROGRESS) ||
+    (cardContainer.id.includes(TASK_DONE) && STATE.dnd.from === TASK_DONE)
+  ) {
+    cardBody.classList.add('card-body-dnd-decline');
+  } else {
+    cardBody.classList.add('card-body-dnd-accept');
+  }
+  return null;
+}
+
+function handleDragEnter(e) {
+  // обработчик события - перетаскиваемый элемент "вошел" в зону, куда можно сделать drop
+  e.preventDefault();
+
+  return null;
+}
+
+function handleDragLeave(e) {
+  // обработчик события - перетаскиваемый элемент "ушел" из зоны, куда можно было сделать drop
+  const cardContainer = e.currentTarget;
+
+  const cardBody = cardContainer.querySelector('.card-body');
+  cardBody.classList.remove('card-body-dnd-accept', 'card-body-dnd-decline');
+}
+
+function handleDrop(e) {
+  // обработчик события - объект "бросили/отпустили" в зону, куда можно сделать drop
+  e.preventDefault();
+  const cardContainer = e.currentTarget;
+  const itemTaskList = STATE.taskList.find(item => item.id === STATE.dnd.id);
+  let isChanged = false;
+
+  if (cardContainer.id.includes(TASK_TODO) && itemTaskList.taskStatus !== TASK_TODO) {
+    itemTaskList.taskStatus = TASK_TODO;
+    isChanged = true;
+  } else if (
+    cardContainer.id.includes(TASK_INPROGRESS) &&
+    itemTaskList.taskStatus !== TASK_INPROGRESS
+  ) {
+    itemTaskList.taskStatus = TASK_INPROGRESS;
+    isChanged = true;
+  } else if (cardContainer.id.includes(TASK_DONE) && itemTaskList.taskStatus !== TASK_DONE) {
+    itemTaskList.taskStatus = TASK_DONE;
+    isChanged = true;
+  }
+  if (isChanged) {
+    renderDnDList();
+    stateToStorage();
+  }
+  handleResetCardBlock();
+}
+
+function initDnD() {
+  const todoListCard = document.getElementById('todoListCard');
+  const inprogressListCard = document.getElementById('inprogressListCard');
+  const doneListCard = document.getElementById('doneListCard');
+
+  const ms = [todoListCard, inprogressListCard, doneListCard];
+
+  for (var i = 0; i < ms.length; i++) {
+    ms[i].addEventListener('dragstart', handleDragStartTask); // назначить события "начало перемещения"
+    ms[i].addEventListener('dragenter', handleDragEnter); // назначить события "вход в зону"
+    ms[i].addEventListener('dragleave', handleDragLeave); // назначить события "выход из зоны"
+    ms[i].addEventListener('dragover', handleDragOver); // назначить события "перемещение над зоной"
+    ms[i].addEventListener('drop', handleDrop); // назначить события "перемещение над зоной"
+  }
+  renderDnDList();
+  document.addEventListener('dragend', handleResetCardBlock);
 }
